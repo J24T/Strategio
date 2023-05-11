@@ -1,0 +1,296 @@
+/*Allgemeingültiges CSS*/
+body{
+	width: 100%;
+	margin: 0;
+	overflow: auto;
+	font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    background: #393D3F;
+	font-size: 18px;
+}    
+h1 
+{
+    font-size: xx-large;
+    color: rgb(255, 255, 255);
+    text-align: center;
+}
+.wrapper
+{    
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 20vh;
+}
+#highscore{
+	height: 100%;
+	justify-content: center;
+	align-items: center;
+	text-align: center;
+}
+/*table CSS*/
+table 
+{    
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    font-size: x-large;
+    width: 50%;
+    border-radius: 10em;
+    border-spacing: 0;
+}
+th 
+{
+    color:white;
+    height: 70px;
+}
+td 
+{
+    color: white;
+    text-align: center;
+} 
+th, td 
+{
+    border-bottom: 1px solid #ddd;
+}
+tbody tr:hover 
+{
+	background-color: #131515;
+}
+    
+flexArea
+{
+    display:flex;
+    flex-flow:column;
+	justify-content: center;
+	align-items: center;
+}
+
+
+/*Navigationsbereich CSS*/
+nav
+{	
+	width: 100%;
+	background-color: #141613;
+}
+
+nav a
+{
+	font-size: larger;
+	color:white;
+}
+
+nav a:hover
+{
+	color: #5DA9E9;
+}
+
+#navliste
+{
+	display: flex;
+	flex-flow: row;
+	flex-wrap: nowrap;
+	justify-content: center;
+	align-items: center;
+}
+#navliste li
+{
+	display: inline;
+	list-style-type: none;
+	padding: 20px;
+}
+/*Generelles input CSS*/
+input
+{
+	min-width: 10%;
+	height: 25px;
+	background-color: white;
+	margin-left: 35px;
+	margin-bottom: 15px;
+	color: black;
+	
+}
+#map-cage
+{
+	margin-left: 35px;
+}
+#ressourcen{
+	cursor: grab;
+}
+/*Breakpoint bei schmalem Bildschirmbereich*/
+@media screen and (max-width:960px)
+{
+    flexArea
+	{  
+        justify-content: flex-start;     
+		align-items: flex-start;
+    }
+	#navliste
+	{
+		flex-wrap: wrap;
+	}
+}
+
+#MuuugIT{
+font-size: xx-large;
+color: #5da9e9;
+font-weight: bold;
+
+}
+#nameInput{
+	width: 80%;
+	height: 30%;
+	font-size:xx-large;
+}
+#btn1{
+	width: 20%;
+	height: 25%;
+	background-color: #5da9e9;
+	border: none;
+	margin-top: 500em;
+	padding-top: 15px;
+	padding-bottom: 20px;
+	font-weight: bold;
+	color: #fff;
+	border-radius: 50px;
+	font-size: large;
+
+}
+#btn1:hover{
+	background-color: #fff;
+	color: #5da9e9;
+
+}
+#btn2{
+	width: 20%;
+	height: 25%;
+	background-color: #5da9e9;
+	border: none;
+	margin-top: 500em;
+	padding-top: 15px;
+	padding-bottom: 20px;
+	font-weight: bold;
+	color: #fff;
+	border-radius: 50px;
+	font-size: large;
+
+}
+#btn2:hover{
+	background-color: #fff;
+	color: #5da9e9;
+
+}
+#ovrly{
+	background-color: #000;
+	height: 150%;
+	width: 150%;
+	position: absolute;
+	top: 0%;
+	left: 0%;
+	z-index:99;
+	opacity: 0.8;
+}
+#help{
+	font-size: 3vw;
+	background-color: rgba(22, 15, 41, .8);
+	color: white;
+	text-align: center;
+	height: 100%;
+	width: 100%;
+	position: absolute;
+	top: 0%;
+	left: 0%;
+	z-index:101;
+}
+#helpControls{
+	font-size: 1.5vw;
+	width: 50%;	
+	position: absolute;
+	top: 20%;
+	left: 25%;
+}
+#helpTable{
+	font-size: 1.5vw;
+	width: 50%;	
+	position: absolute;
+	top: 50%;
+	left: 25%;
+}
+#login{
+	opacity: 1;
+	background-color: #160f29;
+	height: 17vh;
+	width: 50vh;
+	margin-left: auto;
+	margin-right: auto;
+	border: 4px solid #5da9e9;
+	border-radius: 15px;
+	padding: 25px;
+	text-align: center;
+	position: absolute;
+  	top: 35%;
+	left: 37%;
+	z-index:100;
+}
+#ovrly,#login, #help{display: none;}
+
+h1{margin-top: 0px}
+form,input[type="button"]
+{
+	margin:0 !important
+}
+#gui{
+	color: #fff;
+	font-size: large;
+	font-weight: 600;
+	text-align: justify;
+
+}
+.txt {
+	background-color: #fff;
+	display: block;
+	border: 2px solid #5da9e9;
+	border-radius: 10px;
+	padding: 1px;
+	margin: auto;
+	margin-bottom: 15px
+}
+
+#blauH1{
+	color: #5DA9E9;
+	font-size: 4em;
+	margin-top: 23%;
+}
+
+#blauH2{
+	color: #5DA9E9;
+	font-size: 3em;
+	text-align: center;
+	margin-top: 0em;
+	}
+
+
+#guiDiv{
+	background: rgba(22, 15, 41, .5);	
+	height: 15vw;
+	width: 10vw;
+	position: fixed;
+	top: 3%;
+	left: 2%;
+	z-index: 9;
+	color: #FFF;
+	text-align: center;
+	font-size: 1.5vw;
+}
+#spielerText{
+	color: #F23455;
+	font-weight: bold;
+}
+#timerDiv{
+	background: rgba(22, 15, 41, .5);	
+	height: 2vw;
+	width: 10vw;
+	position: fixed;
+	top: 3%;
+	right: 2%;
+	z-index: 9;
+	color: #FFF;
+	text-align: center;
+	font-size: 1.5vw;
+  }

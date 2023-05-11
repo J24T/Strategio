@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="de">
+	<head>
+		<title>MugIT.io</title>
+				<meta charset="UTF-8">
+				<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+				<link rel="shortcut icon" href="Logo.png">
+				<meta name="description"
+					content="a Real-Time-Strategy (RTS) Game with simple io commands and logic to run in your browser">
+				<meta http-equiv="X-UA-Compatible" content="ie=edge">
+				<link rel="stylesheet" href="main.css" type="text/css">
+				<link rel="stylesheet" type="text/css" href="/css/style.css">
+				<script src="/js/login.js"></script>
+				<script type="text/javascript" src="https://cdn.rawgit.com/asvd/dragscroll/master/dragscroll.js"></script>
+	</head>
+	<body onkeydown="helpKeyDown(event)">
+		<script>
+			window.onload = function () {
+				show();
+			}
+			function helpKeyDown(event)
+			{
+				if (event.keyCode == 112)
+				{
+					event.preventDefault();
+					console.log("Hilfe erbeten");
+					helpScreen();
+				}
+			}
+		</script>
+
+			<flexArea>		
+				<section>		
+					<div id="timerDiv">Zeit: <span id="timer"></span></div>
+					<div id="help">
+						<p>HILFE</p>
+						<table id="helpControls">
+							<thead>
+								<tr>
+									<td colspan="2">Controls</td>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td>Linksklick</td>
+									<td>Laufen</td>
+								</tr>
+								<tr>
+									<td>Rechtsklick</td>
+									<td>Bauen (1 Feld Radius um Spieler)</td>
+								</tr>
+								<tr>
+									<td>F1</td>
+									<td>Diese Seite öffnen/schließen</td>
+								</tr>
+							</tbody>
+						</table>
+						<table id="helpTable">
+							<thead>
+							  <tr>
+								<th >Gebäude/Kosten</th>
+								<th >Korn</th>
+								<th >Holz</th>
+								<th >Stein</th>
+								<th >Beschreibung</th>
+							  </tr>
+							</thead>
+							<tbody>
+							  <tr>
+								<td >Farm</td>
+								<td >5</td>
+								<td >10</td>
+								<td >10</td>
+								<td >Baut Korn ab</td>
+							  </tr>
+							  <tr>
+								<td >Holzfällerhütte<br></td>
+								<td >10</td>
+								<td >5</td>
+								<td >0</td>
+								<td >Baut Wald ab</td>
+							  </tr>
+							  <tr>
+								<td >Mine</td>
+								<td >20</td>
+								<td >30</td>
+								<td >0</td>
+								<td >Baut Stein ab</td>
+							  </tr>
+							  <tr>
+								<td >Brücke</td>
+								<td >0</td>
+								<td >5</td>
+								<td >0</td>
+								<td >Ermöglicht Überqueren von Wasser</td>
+							  </tr>
+							</tbody>
+							</table>
+					</div>		
+					<div id="ovrly"></div>					
+					<div id="login">
+						<div id="epic" onkeydown="enterKeyDown(event)">
+						<label for="MugIT" id="MuuugIT">MugIT.io</label><br><br>
+							<input id="nameInput" type="text" placeholder="Enter Username" class="txt" required/>
+							<br>
+							<input type="button" class="button" onclick="closeForm()" value="Play" id="btn1">
+							<script>
+								function enterKeyDown(event) 
+								{
+								   if (event.keyCode == 13) 
+								   {
+									  closeForm();
+								   }
+								}								
+							 </script>
+							<input type="button" class="button" onclick="location.href='Highscore'" value="Highscore" id="btn2" >
+						</div>>
+					</div>
+					<div id="guiDiv">
+						
+					</div>
+					<div class="dragscroll"style="width: 100vw; height: 100vh; overflow: scroll; cursor: grab; cursor : -o-grab; cursor : -moz-grab; cursor : -webkit-grab;">				
+						
+				<div id="map-cage" class="hidden"style="position: relative" >
+					<canvas id="map" width="2560" height="1440"style="position: absolute; left: 0; top: 10; z-index: 0;"></canvas>
+					<canvas id="buildings" width="2560" height="1440"style="position: absolute; left:0; top: 10; z-index: 1;"></canvas>	
+					<canvas id="hover" width="2560" height="1440"style="position: absolute; left:0; top: 10; z-index: 2;"></canvas>
+					<canvas id="highlight" width="2560" height="1440"style="position: absolute; left:0; top: 10; z-index: 3;"></canvas>				
+					<canvas id="player" width="2560" height="1440"style="position: absolute; left:0; top: 10; z-index: 4;"></canvas>
+					<canvas id="ressourcen" width="2560" height="1440"style="position: absolute; left:0; top: 10; z-index: 5;"></canvas>
+					<canvas id="mouseCanvas" width="2560" height="1440"style="position: absolute; left:0; top: 10; z-index: 98;"></canvas>
+					<script src="/js/tile.js"></script>
+					<script src="/js/building.js"></script>
+					<script src="/js/player.js"></script>
+					<script src="/js/noise.js"></script>
+					<script src="/js/map.js"></script>
+				</div>	
+			</div>
+		</section>		
+	</flexArea>
+</div>
+</body>
+</html>
