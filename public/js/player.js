@@ -1,11 +1,12 @@
 class Player {
-    constructor(name, posX, posY){
+    constructor(name, posX, posY, posZ){
             this._name = name,
             this._playerColor = "#FF0000",
-
+            this._path=[]
             
             this._posX = posX,
             this._posY = posY,
+            this._posZ = posZ,
                        
             this._width = 16,
             this._height = 16
@@ -17,10 +18,16 @@ class Player {
 
             this._walking = false,
             this._destinationX = posX,
-            this._destinationY = posY
+            this._destinationY = posY,
+            this._destinationZ = posZ
             
     }
-
+    get path() {
+        return this._path;
+    }
+    set path(path) {
+        this._path=path
+    }
     get name() {
         return this._name;
     }
@@ -30,14 +37,20 @@ class Player {
     get posY() {
         return this._posY;
     }
+    get posZ() {
+        return this._posZ;
+    }
+    get posXYZ(){
+        return [this._posX, this._posY, this._posZ]
+    }
     get X() {
-        return mapTiles[this._posY][this._posX].x;
+        return mapTiles[this._posX][this._posY][this._posZ].x;
     }
     get Y() {
-        return mapTiles[this._posY][this._posX].y;
+        return mapTiles[this._posX][this._posY][this._posZ].y;
     }
     get XY() {
-        return [mapTiles[this._posY][this._posX].x, mapTiles[this._posY][this._posX].y];
+        return [mapTiles[this._posX][this._posY][this._posZ].x, mapTiles[this._posX][this._posY][this._posZ].y];
     }
     get ressourceWALD() {
         return this._ressourceWALD
@@ -57,22 +70,19 @@ class Player {
     set ressourceBERG(n) {
         this._ressourceDREI=n;
     }
-    get destinationYX() {
-        return [this._destinationY, this._destinationX]
+    get destinationXYZ() {
+        return [this._destinationX, this._destinationY, this._destinationZ]
     }
     get walking() {
         return this._walking
     }
 
-    setDestinationXY(target) {
+    setDestinationXYZ(target) {
         this._destinationX = target[0],
-        this._destinationY = target[1]
+        this._destinationY = target[1],
+        this._destinationZ = target[2]
     }
     
-    setDestinationYX(target) {
-        this._destinationX = target[1],
-        this._destinationY = target[0]
-    }
     setWalking(bool) {
         this._walking = bool
     }
@@ -105,18 +115,18 @@ class Player {
     }
     
     //muss überarbeitet werden sobald wir das server side berechnen lassen für MP
-    moveTo(newPosXY) {
+    moveTo(newPosXYZ) {
         //Neu: Tiles werden bei Spieler nicht mehr walkable
         //Warnung: Wenn Spieler verschwinden muss walkablity wieder resettet weden
 
-        mapTiles[this.posY][this.posX].walkable = true
+        mapTiles[this.posX][this.posY][this.posZ].walkable = true
 
         var tileCoordinates = this.XY;
         //ptx.clearRect(tileCoordinates[0] - (this._width / 2), tileCoordinates[1] - (this._width / 2), this._width, this._height);
         ptx.clearRect(0,0,canvas5.width, canvas5.height)
-        this._posX = newPosXY[0]; this._posY = newPosXY[1];
+        this._posX = newPosXYZ[0]; this._posY = newPosXYZ[1]; this._posZ = newPosXYZ[2];
         
-        mapTiles[this.posY][this.posX].walkable = false        
+        mapTiles[this.posX][this.posY][this.posZ].walkable = false        
         var tileCoordinates = this.XY;
         this.drawPlayer(tileCoordinates);        
     }

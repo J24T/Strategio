@@ -1,6 +1,5 @@
 //VARIABLEN
 
-
 const canvas = document.getElementById("map");
 const canvas2 = document.getElementById("highlight");
 const canvas3 = document.getElementById("ressourcen");
@@ -19,7 +18,10 @@ const mtx = canvas7.getContext("2d");
 
 const a = (2 * Math.PI) / 6;
 const r =  16;
-const mapTiles = [];
+
+const mapTiles = []
+const mapTilesNoXYZ = []
+
 var mountainTops= "#DFE2DF";
 var mountainTopsShadow="#707170";
 var mountains = "#8E9489";
@@ -65,25 +67,28 @@ document.addEventListener('contextmenu', event => event.preventDefault());
 canvas7.addEventListener('mousedown', function() {
   mouseIsDown = false;
   var holdWait=setTimeout(function() {
-      console.log("hold")
       mouseIsDown=true;    
   }, 200);
 });
 canvas7.addEventListener('click', (e) => {
-  console.log(mouseIsDown);
   if(!mouseIsDown)
   {
     let id=getCursorPosition(canvas3, e);  
     var idx=id[0];
     var idy=id[1];
-    highlightTile(idx,idy);
-    console.log(mapTiles[idx][idy]);
-    if (mapTiles[idx][idy].walkable) 
+    var idz=id[2];
+    highlightTile(idx,idy,idz);
+    if (mapTiles[idx][idy][idz].walkable) 
     {
-      playerOne.setDestinationYX([idx, idy])
-      playerOne.setWalking(true)
-      //if (playerOne.walking) {console.log("success")}
-      console.log("Set Player destination at X, Y: " + idy + ", " + idx)
+      playerOne.setDestinationXYZ([idx, idy, idz])
+      start=mapTiles[playerOne.posX][playerOne.posY][playerOne.posZ]
+      ziel=mapTiles[playerOne.destinationXYZ[0]][playerOne.destinationXYZ[1]][playerOne.destinationXYZ[2]]
+      let path=getPath(start, ziel)
+      if(path!="None")
+      {
+        playerOne.path=getPath(start, ziel)
+        playerOne.setWalking(true)
+      }
     }
   }
 });
@@ -91,27 +96,46 @@ canvas7.onmousemove = function(e){
   let id=getCursorPosition(canvas3, e); 
   var idx=id[0];
   var idy=id[1];
-  hoverTile(idx,idy);
+  var idz=id[2];
+  hoverTile(idx,idy,idz);
 }
 canvas7.addEventListener('contextmenu', function(e) {
   let id=getCursorPosition(canvas3, e);  
   var idx=id[0];
   var idy=id[1];
-  build(mapTiles[idx][idy],playerArr[0]);
+  build(mapTiles[idx][idy][idz],playerArr[0]);
 })
 
 //INITIALISIERUNG
 drawGrid(canvas.width, canvas.height);
+function setSpawn()
+{
+  spawn=Math.floor(Math.random()*mapTilesNoXYZ.length)
+  zaehler=0
+  for(let i of mapTilesNoXYZ)
+  {
+    if(zaehler==spawn)
+    {
+      if(i.walkable)
+      {
+        return [i.idx, i.idy, i.idz];
+      }
+      else
+      {
+        return setSpawn()
+      }
+    }
+    zaehler++    
+  }
+}
 function init() {
   
   //clear
   //von max
-  spawnTile = [10, 10];
-  while(!mapTiles[spawnTile[0]][spawnTile[1]].walkable) {
-    spawnTile = [Math.floor(Math.random() * 40) + 5, Math.floor(Math.random() * 80) + 10]
-  }
-  console.log("Spawn at X, Y: " + spawnTile[1] + ", " + spawnTile[0])
-  playerOne = new Player ("player", spawnTile[1], spawnTile[0]);
+  spawnTile=setSpawn()
+  playerOne = new Player ("player", spawnTile[0], spawnTile[1], spawnTile[2]);
+  
+  
   //Im MP würde jeder spieler geadded werden, also bisher nur ein Kompatibilitäts ding
   playerArr = [playerOne]; 
   playerOne.drawPlayer(playerOne.XY);
@@ -127,34 +151,31 @@ function tick() {
       updateTile(eTile.idx,eTile.idy);
     }
   })
-  playerArr.forEach(function(player){
-
-    if (player.walking) {
-      //console.log("Player moving wird ausgelöst")
-      playerMove = pathfindingNextTileXY(calcDistanceXY(player.destinationYX))
-    
-      //console.log((playerMove[0] != 0) || (playerMove[1] != 0))
-    
-      targetTile = mapTiles[player.posY + playerMove[1]][player.posX + playerMove[0]];
-
-        if (targetTile.walkable) {
-          player.moveTo(targetTile.idxy)
+  playerArr.forEach(function(player)
+  {
+    if (player.walking) 
+    {
+      if(player.path.length>0)
+      {
+        player.moveTo(player.path[0].idxyz)
+        player.path.shift()
       }
-        else {
-          player.setWalking(false)
-          console.log("Unpassable Terrain, pathfinding stopped")
+      else
+      {
+        player.walking=false
+      }
     }
-  }
-    else {
-    playerTile = mapTiles[player.posY][player.posX];
-    if (playerTile.ress > 0) {
-      playerTile.ress--;
-      player.increaseRessource(playerTile.tera);
-      updateTile(player.posY,player.posX);
+    else 
+    {
+      playerTile = mapTiles[player.posX][player.posY][player.posZ];
+      if (playerTile.ress > 0) 
+      {
+        playerTile.ress--;
+        player.increaseRessource(playerTile.tera);
+        updateTile(player.posX,player.posY,player.posZ);
+      }
     }
-    //else {console.log("No ressources on this tile left")}
-  }
-})
+  })
   updateUI();
   setTimeout(tick, 500);
 }
@@ -170,42 +191,38 @@ function getCursorPosition(canvas, event) {
   let yA = 0;
   let closest = null;
   let diff=1000000;
-   
-   for(var i=0; i<51;i++)
-   {
-    for(var j=0; j<105; j++)
+  for(let i of mapTilesNoXYZ)
+  {
+    xA=Math.abs(i.x-x);
+    yA=Math.abs(i.y-y);
+    if(xA+yA<diff)
     {
-      xA=Math.abs(mapTiles[i][j].x-x);
-      yA=Math.abs(mapTiles[i][j].y-y);
-      if(xA+yA<diff)
-      {
-        diff=xA+yA;
-        closest=mapTiles[i][j];
-      }
+      diff=xA+yA;
+      closest=i
     }
-   }
-  return [closest.idx,closest.idy];
+  }
+  return [closest.idx,closest.idy, closest.idz];
 }
 
 //TILES HIGHLIGHTEN
 
-
-function hoverTile(idx,idy)
+function hoverTile(idx,idy,idz)
 {
-  x=mapTiles[idx][idy].x;
-  y=mapTiles[idx][idy].y;
+  x=mapTiles[idx][idy][idz].x;
+  y=mapTiles[idx][idy][idz].y;
   otx.clearRect(0,0,canvas.width, canvas.height);
   otx.beginPath();
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 6; i++) 
+  {
     otx.lineTo(x + r * Math.cos(a * i), y + r * Math.sin(a * i));
   }
   otx.closePath();
   otx.stroke();
 }
-function highlightTile(idx,idy)
+function highlightTile(idx,idy,idz)
 {
-  x=mapTiles[idx][idy].x;
-  y=mapTiles[idx][idy].y;
+  x=mapTiles[idx][idy][idz].x;
+  y=mapTiles[idx][idy][idz].y;
   htx.clearRect(0,0,canvas.width, canvas.height);
   htx.beginPath();
   for (let i = 0; i < 6; i++) {
@@ -213,54 +230,42 @@ function highlightTile(idx,idy)
   }
   htx.closePath();
   htx.stroke();
-
 }
 
 //TILE UPDATEN
 
-
-function updateTile(idx,idy)
+function updateTile(idx,idy, idz)
 {
-  x=mapTiles[idx][idy].x;
-  y=mapTiles[idx][idy].y;
+  x=mapTiles[idx][idy][idz].x;
+  y=mapTiles[idx][idy][idz].y;
   rtx.clearRect(x-8, y-14, 16, 12);
 
-  switch (mapTiles[idx][idy].tera) {
+  switch (mapTiles[idx][idy][idz].tera) {
     case 1:
-      rtx.fillText(''+mapTiles[idx][idy].ress,x-5,y-5);          
+      rtx.fillText(''+mapTiles[idx][idy][idz].ress,x-5,y-5);          
       break;
     case 2:
-      rtx.fillText(''+mapTiles[idx][idy].ress,x-5,y-5);
+      rtx.fillText(''+mapTiles[idx][idy][idz].ress,x-5,y-5);
       break;
     case 3:
-      rtx.fillText(''+mapTiles[idx][idy].ress,x-5,y-5);
+      rtx.fillText(''+mapTiles[idx][idy][idz].ress,x-5,y-5);
       break;
     default:
   }
 }
 
-//GRID MIT DATEN FÜLLEN
-
+//GRID 
 
 function drawGrid(width, height) 
 {  
-  
   let rand=Math.random()*100;
-  for (
-    let i = 0, y = r; 
-    y + r * Math.sin(a) < height; 
-    y += r * Math.sin(a)
-    ) 
-    {
-      
-      var mapTile=[];
-      for (
-        let x = r, j = 0;
-        x + r * (1 + Math.cos(a)) < width;
-        x += r * (1 + Math.cos(a)), y += (-1) ** j++ * r * Math.sin(a)
-      ) 
-      {
-        
+  for (let i = 0, y = r; y + r * Math.sin(a) < height; y += r * Math.sin(a)) 
+  {   
+    let idx=0
+    let idy=0
+    let idz=0
+    for (let x = r, j = 0; x + r * (1 + Math.cos(a)) < width; x += r * (1 + Math.cos(a)), y += (-1) ** j++ * r * Math.sin(a))       
+    {              
       let extra=0;
       let nx=x/width-0.5;
       let ny=y/height-0.5;
@@ -272,15 +277,15 @@ function drawGrid(width, height)
         helpTera=BERGKUPPEL;
       } 
       else if(help<-0.45)
-       {
+      {
         helpTera=BERG;
-       }
-       else if(help<-0.35)
-       {
+      }
+      else if(help<-0.35)
+      {
         helpTera=WALD;
-       }
-       else if(help<0.1)
-       {
+      }
+      else if(help<0.1)
+      {
         help2=ImprovedNoise.noise(15*nx,15*ny,1);
         if(help2<-0.1)
         {
@@ -299,95 +304,113 @@ function drawGrid(width, height)
           helpTera=WALD;
           extra=24;
         }
-       }
-       else
-       {  
+      }
+      else
+      {  
           helpTera=WASSER;
           elevation=4+Math.random();
-       }
-        newtile = new tile(
-          i,
-          j,
-          x+elevation,
-          y+elevation*2,          
-          helpTera,
-          Math.floor(Math.random() * (48))+16+extra,
-        ); 
-        mapTile[j]=newtile;         
       }
-      mapTiles[i] = mapTile; 
-      i++;
+      if(j==0)
+      {
+        idx=100
+        idy=100-i
+        idz=100+i
+      }
+      else
+        if(j%2==0)
+        {
+          idx=idx+1
+          idy=idy
+          idz=idz-1
+        }
+        else
+        {
+          idx=idx+1
+          idy=idy-1
+          idz=idz
+        }
+      newtile = new tile(
+        idx,
+        idy,
+        idz,
+        x+elevation,
+        y+elevation*2,
+        helpTera,
+        Math.floor(Math.random() * (48))+16+extra,
+      );
+      drawMap(newtile);
+      if(typeof mapTiles[idx] == 'undefined')
+      {
+        mapTiles[idx]=[];
+      }
+      if(typeof mapTiles[idx][idy] == 'undefined')
+      {
+        mapTiles[idx][idy]=[];
+      }
+      mapTiles[idx][idy][idz]=newtile;   
+      mapTilesNoXYZ.push(newtile);   
     }
-    drawMap(width, height);
+    i++;
+  }
 }
-
 //GRID MALEN
 
-
-function drawMap(width, height)
+function drawMap(tile)
 {
-  for(var i=0; i<51;i++)
-   {
-    for(var j=0; j<105; j++)
-    {
-      tile=mapTiles[i][j];
-      x=tile.x;
-      y=tile.y;
-      switch (tile.tera) 
-      {
-        case 1:
-          ctx.fillStyle=woodsShadow;
-          drawHexagon(x+7, y+12);
-          ctx.fillStyle = woods;
-          drawHexagon(x, y, tile.tera);
-          rtx.fillText(''+tile.ress,x-5,y-5);          
-          break;
-        case 2:
-          ctx.fillStyle=cornShadow;
-          drawHexagon(x+7, y+12);
-          ctx.fillStyle = corn;
-          drawHexagon(x, y, tile.tera);        
-          rtx.fillText(''+tile.ress,x-5,y-5);   
-          break;
-        case 3:
-          ctx.fillStyle=mountainsShadow;
-          drawHexagon(x+7, y+12);
-          ctx.fillStyle = mountains;
-          drawHexagon(x, y, tile.tera);
-          rtx.fillText(''+tile.ress,x-5,y-5);
-          break;
-        case 4:
-          ctx.fillStyle=fieldShadow;
-          drawHexagon(x+7, y+12);
-          ctx.fillStyle = field;
-          drawHexagon(x, y, tile.tera);
-          tile.ress=0;
-          break;
-        case 5:
-          ctx.strokeStyle=waterShadow;
-          ctx.fillStyle=waterShadow;
-          drawHexagon(x+7, y+12);
-          ctx.fillStyle = water;
-          ctx.strokeStyle=water;
-          drawHexagon(x, y, tile.tera);
-          tile.ress=0;
-          break;
-        case 6:                 
-          ctx.strokeStyle=mountainTopsShadow;
-          ctx.fillStyle=mountainTopsShadow;
-          drawHexagon(x+7, y+12);
-          console.log(mountainTops);
-          ctx.strokeStyle=mountainTops;
-          ctx.fillStyle = mountainTops;   
-          drawHexagon(x, y, tile.tera);
-          tile.ress=0;
-          break;
-        default:
-          ctx.fillStyle = defaultColor;
-          drawHexagon(x, y, tile.tera);
-          tile.ress=0;
-      }
-    }  
+  x=tile.x;
+  y=tile.y;
+  switch (tile.tera) 
+  {
+    case 1:
+      ctx.fillStyle=woodsShadow;
+      drawHexagon(x+7, y+12);
+      ctx.fillStyle = woods;
+      drawHexagon(x, y, tile.tera);
+      rtx.fillText(''+tile.ress,x-5,y-5);          
+      break;
+    case 2:
+      ctx.fillStyle=cornShadow;
+      drawHexagon(x+7, y+12);
+      ctx.fillStyle = corn;
+      drawHexagon(x, y, tile.tera);        
+      rtx.fillText(''+tile.ress,x-5,y-5);   
+      break;
+    case 3:
+      ctx.fillStyle=mountainsShadow;
+      drawHexagon(x+7, y+12);
+      ctx.fillStyle = mountains;
+      drawHexagon(x, y, tile.tera);
+      rtx.fillText(''+tile.ress,x-5,y-5);
+      break;
+    case 4:
+      ctx.fillStyle=fieldShadow;
+      drawHexagon(x+7, y+12);
+      ctx.fillStyle = field;
+      drawHexagon(x, y, tile.tera);
+      tile.ress=0;
+      break;
+    case 5:
+      ctx.strokeStyle=waterShadow;
+      ctx.fillStyle=waterShadow;
+      drawHexagon(x+7, y+12);
+      ctx.fillStyle = water;
+      ctx.strokeStyle=water;
+      drawHexagon(x, y, tile.tera);
+      tile.ress=0;
+      break;
+    case 6:                 
+      ctx.strokeStyle=mountainTopsShadow;
+      ctx.fillStyle=mountainTopsShadow;
+      drawHexagon(x+7, y+12);
+      ctx.strokeStyle=mountainTops;
+      ctx.fillStyle = mountainTops;   
+      drawHexagon(x, y, tile.tera);
+      tile.ress=0;
+      break;
+    default:
+      ctx.fillStyle = defaultColor;
+      drawHexagon(x, y, tile.tera);
+      tile.ress=0;
   }
 }
 function hexToRgb(hex) {
@@ -461,7 +484,6 @@ function drawHexagon(x, y, tera) {
 
   blue+=randomBrightness;
   blue=clampColor(blue);
-  console.log(red);
   //RGB to Hex in fillStyle
   ctx.fillStyle=rgbToHex(red,green,blue);
 
@@ -483,67 +505,182 @@ function drawHexagon(x, y, tera) {
 function movePlayer(targetPlayer, targetID) {  
   targetPlayer.moveTo(targetID)
 }
+//pathfinding
+function getPath(start, ziel)
+{
+  let surrounding=[]
+  let pathfind=[]
+  start.steps=0
+  pathfind.push(start)  
+  for(let tile of getSurrounding(start))
+  {        
+    tile.steps=start.steps+1
+    surrounding.push(tile)
+  }
+  var distance=Infinity
+  var next=null
+  for(let tile of surrounding)
+  {
+    if(getDistance(tile, ziel)+tile.steps<distance)
+    {
+      distance=getDistance(tile, ziel)+tile.steps
+      next=tile
+    }
+  }
+  pathfind.push(next)
+  surrounding.splice(surrounding.indexOf(next),1) 
+  if(getDistance(next, ziel)==0)
+  {
+    return [next]
+  }
+  else{
+    return getPathR(next, ziel, surrounding, pathfind)
+  }
+}
+//Recursive pathfinding
+function getPathR(start, ziel, surrounding, pathfind)
+{
+  for(let tile of getSurrounding(start))
+  {
+    if(!surrounding.includes(tile) && !pathfind.includes(tile))
+    {
+      tile.steps=start.steps+1
+      surrounding.push(tile)
+    }
+  }
+  var distance=Infinity
+  var next=null
+  for(let tile of surrounding)
+  {
+    if(getDistance(tile, ziel)+tile.steps<distance)
+    {
+      distance=getDistance(tile, ziel)+tile.steps
+      next=tile
+    }
+  }
+  if(next==null)
+  {
+    return "None"
+  }
+  /*
+  var anzahlGleicherDistanz=0
+  for(let tile of surrounding)
+  {
+    if(getDistance(tile, ziel)+tile.steps==distance)
+    {
+      anzahlGleicherDistanz++
+    }
+  }
+  if(anzahlGleicherDistanz>1)
+  {
+    var stepsMade=0
+    for(let tile of surrounding)
+    {
+      if(getDistance(tile, ziel)+tile.steps==distance && tile.steps>stepsMade)
+      {
+        stepsMade=tile.steps
+        next=tile
+      }
+    }
+  }
+  */
+  pathfind.push(next)
+  surrounding.splice(surrounding.indexOf(next),1) 
+  if(getDistance(next, ziel)==0)
+  {
+    let finalPath=[]
+    finalPath.push(next)
+    for(let i=pathfind.length-1; i>=2; i--)
+    {
+      stepsMade=finalPath[finalPath.length-1].steps
+      for(let tile of getSurrounding(finalPath[finalPath.length-1]))
+      {
+        if(pathfind.includes(tile))
+        {
+          if(tile.steps==stepsMade-1)
+          {              
+            stepsMade=tile.steps
+            next=tile
+          }
+        }
+      }      
+      finalPath.push(next)
+    }
+    console.log(finalPath.length)
+    finalPath = [...new Set(finalPath)];
+    return finalPath.reverse() 
+  }
+  else
+  {
+    return getPathR(next, ziel, surrounding,pathfind)
+  }
+}
 
+function getSurrounding(tile)
+{
+  tiles=[]
+  x=tile.idx
+  y=tile.idy
+  z=tile.idz
+  if(tileExists(x-1, y+1, z) && mapTiles[x-1][y+1][z].walkable)
+    tiles.push(mapTiles[x-1][y+1][z])
+
+  if(tileExists(x,y+1,z-1) && mapTiles[x][y+1][z-1].walkable)
+    tiles.push(mapTiles[x][y+1][z-1])
+
+  if(tileExists(x+1,y,z-1) && mapTiles[x+1][y][z-1].walkable)
+    tiles.push(mapTiles[x+1][y][z-1])
+
+  if(tileExists(x+1,y-1,z) && mapTiles[x+1][y-1][z].walkable)
+    tiles.push(mapTiles[x+1][y-1][z])
+
+  if(tileExists(x,y-1,z+1) && mapTiles[x][y-1][z+1].walkable)
+    tiles.push(mapTiles[x][y-1][z+1])
+
+  if(tileExists(x-1,y,z+1) && mapTiles[x-1][y][z+1].walkable)
+    tiles.push(mapTiles[x-1][y][z+1])
+  if(tile.steps%2==0)
+  {
+    return tiles.reverse()
+  }
+  else
+  {
+    return tiles
+  }
+}
+function tileExists(x,y,z)
+{
+  if(typeof mapTiles[x]=='undefined')
+  {
+    return false
+  }
+  else if(typeof mapTiles[x][y]=='undefined')
+  {
+    return false
+  }
+  else if(typeof mapTiles[x][y][z]=='undefined')
+  {
+    return false
+  }
+  else
+  {
+    return true
+  }
+}
+function getDistance(start, ziel)
+{
+  return Math.max(Math.abs(start.idx-ziel.idx), Math.abs(start.idy-ziel.idy), Math.abs(start.idz-ziel.idz))
+}
 //edited by Max
-function calcDistanceXY(targetYX) {
-  console.log("Player Position X, Y: " + playerOne.posX + ", " + playerOne.posY)
-  deltaX = targetYX[1] - playerOne.posX
-  deltaY = targetYX[0] - playerOne.posY
-  console.log("Distance to Tile X, Y:  " + deltaX + ", " + deltaY)
-  return [deltaX, deltaY]
+function calcDistanceXYZ(targetXYZ) {
+  deltaX = Math.abs(targetXYZ[0] - playerOne.posX)
+  deltaY = Math.abs(targetXYZ[1] - playerOne.posY)
+  deltaZ = Math.abs(targetXYZ[2] - playerOne.posZ)
+  return [deltaX, deltaY, deltaZ]
 }
 
 //edited by Max
-function pathfindingNextTileXY(deltaXY) {
-  
-  //stattdessen eine funktion loopen die nur noch eine direction erlaubt?
-  
-  //Case PNT-Y: Bewegung auf Y Achse
-  if (deltaXY[0] == 0) {
-    if (deltaXY[1] == 0) {
-      console.log("PNT: Arrived at destination")
-      return [0, 0]
-    } else {
-      //console.log("pnt1 " + [0, (deltaXY[1]/Math.abs(deltaXY[1]))])
-      return [0, (deltaXY[1]/Math.abs(deltaXY[1]))]
-    }
-  }
 
-  //Case PNT-X: Bewegung auf X Achse
-  else if (deltaXY[1] == 0) {
-      //console.log("pnt2 " + [(deltaXY[0]/Math.abs(deltaXY[0])), 0])
-      return [(deltaXY[0]/Math.abs(deltaXY[0])), 0]
-  } 
-
-  //Case PNT-Z: Bewegung auf "Z" Achse
-
-  //NEUE IDEE: cases 1,1;-1,-1;1,-1;-1,1
-
-  //Gerade ist free nach oben.
-  else if (playerOne.posX % 2 == 0) {
-    if (deltaXY[1] < 0) { 
-      //console.log("pnt3 " + [(deltaXY[0]/Math.abs(deltaXY[0])), 0])
-      return [(deltaXY[0]/Math.abs(deltaXY[0])), -1]
-    }
-    else {
-      //console.log("pnt4 " + [(deltaXY[0]/Math.abs(deltaXY[0])), 1])
-      return [(deltaXY[0]/Math.abs(deltaXY[0])), 0]
-    }
-
-    
-  }
-
-  else {
-    if (deltaXY[1] > 0) {
-      //console.log("pnt5 " + [(deltaXY[0]/Math.abs(deltaXY[0])), -1])
-      return [(deltaXY[0]/Math.abs(deltaXY[0])), 1]
-    }
-    else {
-      //console.log("pnt6 " + [(deltaXY[0]/Math.abs(deltaXY[0])), 0])
-      return [(deltaXY[0]/Math.abs(deltaXY[0])), 0]
-    }
-  }
-}
 
 //Building Funktionen
 
@@ -555,7 +692,6 @@ function build(tile, player)
     if(iterable.tile==tile)
     {
       isBuilding=true;
-      console.log("schon bebaut");
     }
   }
   if(!isBuilding&&isNearPlayer(tile, player)==true)
@@ -605,7 +741,6 @@ function build(tile, player)
     }
     else
     {
-      console.log("Nicht genug Ressourcen");
     }
     
   }    
@@ -622,7 +757,6 @@ function isNearPlayer(tile, player)
       {
         if(player.posX%2==0)
         {
-          console.log("TEST");
           if(tile.idx==player.posY+1&&tile.idy==player.posX-1)
           {
             return false;
@@ -634,7 +768,6 @@ function isNearPlayer(tile, player)
         }
         else
         {
-          console.log("TEST2")
           if(tile.idx==player.posY-1&&tile.idy==player.posX-1)
           {
             return false;
